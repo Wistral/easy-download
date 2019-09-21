@@ -12,7 +12,6 @@ import os
 import progressbar
 import numpy as np
 import threading
-import threading
 import time
 import argparse
 import sys
@@ -67,13 +66,9 @@ class DownloadThread(threading.Thread):
                     print('unknown', code)
                     print(self.response.text)
                 self.size = self.full_size
-#                for chunk in self.response.iter_content(chunk_size=self.chunk_size):
-#                    self.chunks.append(chunk)
-#                    self.size += self.chunk_size
 #                print('文件块', self.h['Range'].split('=')[-1], '下载成功')
             else:
                 self.response = self.ss.get(self.url, headers=self.h)
-                
         elif selff.method == 'POST':
             self.response = self.ss.post(self.url, headers=self.h)
         else:
@@ -112,13 +107,13 @@ class MultiThread:
 
     def get_size(self):
         # 获取资源的大小，单位字节
-        # 当前仅支持1次跳转
         head = self.ss.head(self.url)
-        if head.status_code // 100 == 3:
+        while head.status_code // 100 == 3:
             head = self.ss.head(head.headers['Location'])
-        if head.status_code == 200:
-            self.size = int(head.headers['Content-Length'])
-            return True
+        else:
+            if head.status_code == 200:
+                self.size = int(head.headers['Content-Length'])
+                return True
         return False
 
     def check_alive(self):
@@ -264,7 +259,7 @@ def _main():
     kwargs = {
         'url': 'http://mirrors.yun-idc.com/ubuntu-releases/18.04.3/ubuntu-18.04.3-live-server-amd64.iso',
         'fn': '',
-        'thread_num': 2,
+        'thread_num': 1,
         'md5': '',
         'verbose': False
     }
@@ -274,7 +269,7 @@ def _main():
     parser.description = _description
     parser.add_argument('url', help='资源URL', type=str, default='')
     parser.add_argument('-n', '--fname', help='下载文件名', type=str)
-    parser.add_argument('-t', '--thread-num', help='下载线程数', type=int, default=2)
+    parser.add_argument('-t', '--thread-num', help='下载线程数', type=int, default=1)
     parser.add_argument('--md5', help='开启md5校验', type=str)
     parser.add_argument('-v', '--verbose', help='繁琐输出', action="store_true")
     args = parser.parse_args()
